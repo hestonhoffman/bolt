@@ -1,38 +1,45 @@
 # Inventory file version 2
 
-## Available fields
+Use an inventory file to store information about your targets and arrange them into groups. Grouping your targets lets you aim your Bolt commands at the group instead of having to reference each target individually.
 
-### Top level fields
+The command `bolt inventory show -t <TARGET> --detail` provides a quick way to view the resolved values for a target or group of targets.
 
-The following fields are available at the top level of a version 2 inventory file. The top level of an inventory file is the group `all` and has similar fields as a `group` object. Using a version 2 inventory file requires `version: 2` at the top level.
+> **Note**: Version 1 inventory files are deprecated. If you're using version 1 inventory files, make sure you've migrated them to version 2 before the release of Bolt 2.0. For more information on migrating to version 2, see [Migrating your inventory files to version 2](./migrating_inventory_files.md).
 
-> **Note:** Starting with Bolt 2.0 the inventory file will default to version 2 and will not require the `version` field.
+## Inventory file structure
+
+### Top-level fields
+
+The top level of an inventory file acts as the implicit `all` group and has similar fields as a `groups` object. Using a version 2 inventory file requires `version: 2` at the top level.
+
+The following fields are available at the top level of a version 2 inventory file:
 
 | Key | Description | Type |
 | --- | ----------- | ---- |
-| `config` | The configuration for the `all` group. | `Hash` |
-| `facts` | The facts for the `all` group. | `Hash` |
-| `features` | The features for the `all` group. | `Array[String]`
-| `groups` | A list of targets and groups and their associated configuration. | `Array[Group]` |
-| `targets` | A list of targets and their associated configuration. | `Array[Target]` |
-| `vars` | The vars for the `all` group. | `Hash` |
-| `version` | The version of the inventory file.<br>**Default:** 1 | `Integer` |
+| `config` | The configuration for the `all` group. Optional. | `Hash` |
+| `facts` | The facts for the `all` group. Optional. | `Hash` |
+| `features` | The features for the `all` group. Optional. | `Array[String]`
+| `groups` | A list of targets and groups and their associated configuration. Optional. | `Array[Group]` |
+| `targets` | A list of targets and their associated configuration. Optional. | `Array[Target]` |
+| `vars` | The vars for the `all` group. Optional. | `Hash` |
+| `version` | The version of the inventory file. <br>**Required in Bolt versions 1.x.** <br>Default: 1 | `Integer` |
 
 
 ### Group object
 
-A group is a list of targets and groups and their associated configuration. Each group is a map that can contain any of the following fields. A group is **required** to have a `name` field.
+A group lists a set of `targets` and `groups` and their associated configuration. Each group is a map that can contain any of the following fields:
 
 | Key | Description | Type |
 | --- | ----------- | ---- |
-| `config` | The configuration for the group. | `Hash` |
-| `facts` | The facts for the group. | `Hash` |
-| `features` | The features for the group. | `Array[String]`
-| `groups` | A list of groups and their associated configuration. | `Array[Group]` |
-| **`name`** | The name of the group.<br> **Required.** | `String` |
-| `targets` | A list of targets and their associated configuration. | `Array[Target]` |
-| `vars` | The vars for the group. | `Hash` |
+| `config` | The configuration for the group. Optional. | `Hash` |
+| `facts` | The facts for the group. Optional. | `Hash` |
+| `features` | The features for the group. Optional. | `Array[String]`
+| `groups` | A list of groups and their associated configuration. Optional. | `Array[Group]` |
+| `name` | The name of the group. **Required.** | `String` |
+| `targets` | A list of targets and their associated configuration. Optional. | `Array[Target]` |
+| `vars` | The variables for the group. Optional. | `Hash` |
 
+An example of an inventory file with two groups named `linux` and `windows`:
 ```yaml
 version: 2
 groups:
@@ -50,22 +57,21 @@ groups:
       transport: winrm
 ```
 
-
 ### Target object
 
-A target can be specified with the string representation of the `uri` or as a hash with any of the following fields.
+You can specify a target with the string representation of a URI, or as a hash with any of the following fields:
 
 | Key | Description | Type |
 | --- | ----------- | ---- |
-| `alias` | A unique alias to refer to the target. | `String` |
-| `config` | The configuration for the target. | `Hash` |
-| `facts` | The facts for the target. | `Hash` |
-| `features` | The features for the target. | `Array[String]`
-| **`name`** | A human-readable name for a target.<br> **Required** when specifying a target using a hash. Optional if using `uri`. | `String` |
-| **`uri`** | The uri of the target.<br> **Required** when specifying a target using a hash. Optional if using `name`. | `String` |
-| `vars` | The vars for the target. | `Hash` |
+| `alias` | A unique alias to refer to the target. Optional. | `String` |
+| `config` | The configuration for the target. Optional. | `Hash` |
+| `facts` | The facts for the target. Optional. | `Hash` |
+| `features` | The features for the target. Optional. | `Array[String]`
+| `name` | A human-readable name for a target.<br> **Required** when specifying a target using a hash. Optional if using `uri`. | `String` |
+| `uri` | The URI of the target.<br> **Required** when specifying a target using a hash. Optional if using `name`. | `String` |
+| `vars` | The variables for the target. Optional. | `Hash` |
 
-A target can be specified with just the string representation of its `uri`.
+An example of targets specified with the string representations of their URIs:
 
 ```yaml
 version: 2
@@ -74,7 +80,7 @@ targets:
   - target2.example.com
 ```
 
-A target can also be specified with a hash that requires either a `name` or `uri` key.
+An example of targets specified with hashes:
 
 ```yaml
 version: 2
@@ -92,11 +98,9 @@ targets:
 
 ## Precedence
 
-When searching for target configuration, the URI used to create the target is matched to the target's name. Any target-based configuration - such as `host`, `transport`, and `port` - will override group configuration values. Any target-based data - such as `alias`, `facts`, and `vars` - will be merged with group-based data.
+When searching for a target's configuration data, Bolt matches a target's URI with its name. Bolt uses depth-first search and uses the first value it finds.
 
-Target values take precedence over group values and are searched first. For configuration values, the first value found for a target is used. Values are searched for in a depth first order. The first item in an array is searched first.
-
-Inventory files are not context-aware. Any configuration or data set for a target, whether in a target definition or a group, will apply to all definitions of the target. For example, the following inventory file contains two definitions of `mytarget`. 
+The `config` values for a target object, such as `host`, `transport`, and `port`, take precedent and override any `config` values at the group level. Bolt merges non-`config` data in the target object, such as `alias`, `facts`, and `vars`, with data in the group object.
 
 ```yaml
 version: 2
@@ -108,6 +112,10 @@ groups:
         config:
           ssh:
             user: puppet
+        facts: 
+          hardwaremodel: x86_64
+      - name: myothertarget
+        uri: target2.example.com
     config:
       ssh:
         host-key-check: false
@@ -118,11 +126,30 @@ groups:
         config:
           ssh:
             password: bolt
+    config: 
+      ssh: 
+        password: password
+    facts: 
+      operatingsystem: CentOS
+
 ```
 
-When running Bolt commands on `group2` the target `mytarget` will have its `user`, `password`, and `host-key-checks` fields set, even though `user` and `host-key-check` were set in `group1`.
+In the example above,  `mytarget` in `group1` contains the fact, `hardwaremodel:
+x86_64.` There is also a top-level fact, `operatingsystem: CentOS`. 
 
-The command `bolt inventory show -t <targets> --detail` provides a quick way to view the resolved configuration and data for a target or group of targets. Running the command `bolt inventory show -t group2 --detail` shows the resolved configuration and data for `mytarget`, which includes configuration set in `group1`.
+Running `bolt inventory show -t group1 --detail` returns both facts for `mytarget`:
+
+```json
+…
+
+"facts": {
+  "operatingsystem": "CentOS",
+  "hardwaremodel": "x86_64"
+},
+```
+
+Inventory files are not context-aware. Any data set for a target, whether in a target definition or a group, apply to all definitions of the target. For example, the inventory file above contains two definitions of `mytarget`. The values for `user` and `host-key-check` are set in `group1`. The value for `password` is set in `group2`. If you ran a Bolt command on `group2`, all three values would be set on `mytarget`. Running `bolt inventory show -t group2 --detail` shows the three configuration values:
+
 
 ```json
 {
@@ -142,85 +169,40 @@ The command `bolt inventory show -t <targets> --detail` provides a quick way to 
   ]
 }
 ```
-
+> **Note**: The password for mytarget is defined at the target level in `group2`, and overrides the password set at the group level. 
 
 ## Plugins
 
-Plugins can be used to dynamically load information into the inventory file. Plugins either ship with Bolt or are installed as Puppet modules that have the same name as the plugin. The plugin framework is based on a set of plugin hooks that are implemented by plugin authors and called by Bolt.
-
-Read more about the different types of plugins and configuring plugins on the [plugins reference page](#).
+Use plugins to dynamically load information into the inventory file. Plugins
+either ship with Bolt, or are installed as Puppet modules that have the same
+name as the plugin. The plugin framework is based on a set of plugin hooks that
+are implemented by plugin authors and called by Bolt.
 
 > **Note:** Plugins are only available in version 2 inventory files.
+
+For more information about plugins, see [Using plugins](./using_plugins.md).
 
 ### Bundled plugins
 
 Bolt ships with several plugins.
 
-| Plugin | Description | Docs |
+| Plugin | Description | Documentation |
 | ------ | ----------- | ---- |
-| `aws_inventory` | Generate targets from AWS EC2 instances. | [Docs](https://forge.puppet.com/puppetlabs/aws_inventory) |
-| `azure_inventory` | Generate targets from Azure VMs and VM scale sets. | [Docs](https://forge.puppet.com/puppetlabs/azure_inventory) |
-| `pkcs7` | Use encrypted values for sensitive data. | [Docs](using_plugins.html#pkcs7) |
-| `prompt` | Prompt users to enter sensitive configuration information instead of storing it in a file. | [Docs](using_plugins.html#prompt) |
-| `puppetdb` | Query PuppetDB for a group of targets. | [Docs](using_plugins.html#puppetdb) |
-| `task` | Use a task to load targets, configuration, or other data. | [Docs](using_plugins.html#task) |
-| `terraform` | Generate targets from local and remote Terraform state files. | [Docs](https://forge.puppet.com/puppetlabs/terraform) |
-| `vault` | Set values by accessing secrets from a Key/Value engine on a Hashicorp Vault server. | [Docs](https://forge.puppet.com/puppetlabs/vault) |
-| `yaml` | Compose multiple YAML files into a single file. | [Docs](https://forge.puppet.com/puppetlabs/yaml) |
+| `aws_inventory` | Generate targets from AWS EC2 instances. | [aws_inventory](https://forge.puppet.com/puppetlabs/aws_inventory) |
+| `azure_inventory` | Generate targets from Azure VMs and VM scale sets. | [azure_inventory](https://forge.puppet.com/puppetlabs/azure_inventory) |
+| `pkcs7` | Use encrypted values for sensitive data. | [Using plugins](using_plugins.html#pkcs7) |
+| `prompt` | Prompt users to enter sensitive configuration information instead of storing it in a file. | [Using plugins](using_plugins.html#prompt) |
+| `puppetdb` | Query PuppetDB for a group of targets. | [Using plugins](using_plugins.html#puppetdb) |
+| `task` | Use a task to load targets, configuration, or other data. | [Using plugins](using_plugins.html#task) |
+| `terraform` | Generate targets from local and remote Terraform state files. | [terraform](https://forge.puppet.com/puppetlabs/terraform) |
+| `vault` | Set values by accessing secrets from a Key/Value engine on a Hashicorp Vault server. | [vault](https://forge.puppet.com/puppetlabs/vault) |
+| `yaml` | Compose multiple YAML files into a single file. | [yaml](https://forge.puppet.com/puppetlabs/yaml) |
 
-
-## Migrating from version 1
-
-To maintain compatibility with future versions of Bolt, a Version 1 inventory file should be migrated to Version 2. This process can be completed manually by chaning the names of some keys in the inventory or automatically using a Bolt command.
-
-### Automatic migration
-
-To automatically migrate a Version 1 inventory file to version 2, use the `bolt project migrate` command. Bolt will locate the inventory file for the current Bolt project and migrate it in place. Specific projects and inventory files can be specified using the `--boltdir` and `--inventoryfile` options.
-
-> **Note:** The `bolt project migrate` command will modify an inventory file in place and does not preserve comments or formatting. Before using the command make sure to backup the inventory file.
-
-
-### Manual migration
-
-To manually migrate a Version 1 inventory file, begin by adding `version: 2` at the top level. Next, change all instances of `nodes` keys to `targets` keys.
-
-`nodes` => `targets`
-
-Lastly, change any instance of a `name` key in a `Target` object to a `uri` key.
-
-`name` => `uri`
-
-#### Version 1 inventory file
-
-```yaml
-groups:
-  - name: linux
-    nodes:
-      - name: target1.example.com
-        alias: target1
-      - name: target2.example.com
-        alias: target2
-```
-
-#### Version 2 inventory file
-
-```yaml
-version: 2
-groups:
-  - name: linux
-    targets:
-      - uri: target1.example.com
-        alias: target1
-      - uri: target2.example.com
-        alias: target2
-```
-
-
-## Examples
+## Inventory file examples
 
 ### Basic inventory file
 
-The following inventory file contains a basic hierarchy of groups and targets. As with all inventory files, it has a top level group named `all`, which refers to all targets in the inventory. The `all` group has two subgroups named `linux` and `windows`.
+The following inventory file contains a basic hierarchy of groups and targets. As with all inventory files, it has a top-level group named `all`, which refers to all targets in the inventory. The `all` group has two subgroups named `linux` and `windows`.
 
 The `linux` group lists its targets and sets the default transport for the targets to the SSH protocol.
 
@@ -247,7 +229,7 @@ groups:
 
 ### Detailed inventory file
 
-The following inventory file contains a more detailed hierarchy of groups and targets. As with all inventory files, it has a top level group named `all`, which refers to all targets in the inventory. The `all` group has two subgroups named `ssh_nodes` and `win_nodes`. 
+The following inventory file contains a more detailed hierarchy of groups and targets. As with all inventory files, it has a top-level group named `all`, which refers to all targets in the inventory. The `all` group has two subgroups named `ssh_nodes` and `win_nodes`. 
 
 The `ssh_nodes` group has two subgroups - `webservers` and `memcached` - and sets the default transport for targets in the group to the SSH protocol. It also specifies a few configuration options for the SSH transport. Each of the subgroups lists the targets in the group and the `memcached` group has additional SSH transport configuration for its targets.
 
@@ -302,13 +284,13 @@ groups:
 
 The following inventory file uses several bundled plugins.
 
-* The `yaml` plugin is used to compose `aws_inventory.yaml` and `azure_inventory.yaml` into a single inventory file loaded by Bolt.
-* The `aws_inventory` plugin is used to generate targets from AWS EC2 instances.
-* The `azure_inventory` plugin is used to generate targets from Azure VMs.
-* The `vault` plugin is used to load a secret from a Hashicorp Vault server and use it as a password.
-* The `prompt` plugin is used to configure the `vault` plugin in a configuration file and prompt for the user's Vault password.
+* The `yaml` plugin composes `aws_inventory.yaml` and `azure_inventory.yaml` into a single inventory file loaded by Bolt.
+* The `aws_inventory` plugin generates targets from AWS EC2 instances.
+* The `azure_inventory` plugin generates targets from Azure VMs.
+* The `vault` plugin loads a secret from a Hashicorp Vault server and uses it as a password.
+* The `prompt` plugin configures the `vault` plugin in a configuration file and prompts for the user's Vault password.
 
-The `inventory.yaml` file.
+The `inventory.yaml` file:
 
 ```yaml
 version: 2
@@ -319,7 +301,7 @@ groups:
     filepath: inventory/azure_inventory.yaml
 ```
 
-The `aws_inventory.yaml` file.
+The `aws_inventory.yaml` file:
 
 ```yaml
 name: aws
@@ -338,7 +320,7 @@ config:
       field: password
 ```
 
-The `azure_inventory.yaml` file.
+The `azure_inventory.yaml` file:
 
 ```yaml
 name: azure
@@ -355,7 +337,7 @@ config:
       field: password
 ```
 
-The `bolt.yaml` configuration file.
+The `bolt.yaml` configuration file:
 
 ```yaml
 plugins:

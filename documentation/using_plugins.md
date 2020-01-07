@@ -1,6 +1,6 @@
 # Using plugins
 
-Plugins can be used to dynamically load information into an inventory file or configuration file. Plugins either ship with Bolt or are installed as Puppet modules that have the same name as the plugin. The plugin framework is based on a set of plugin hooks that are implemented by plugin authors and called by Bolt.
+Use Plugins to dynamically load information into an inventory file or configuration file. Plugins either ship with Bolt or are installed as Puppet modules that have the same name as the plugin. The plugin framework is based on a set of plugin hooks that are implemented by plugin authors and called by Bolt.
 
 A plugin hook provides an API for a specific use case. A plugin can implement multiple hooks. The way in which a plugin is used varies depending on the type of hook used.
 
@@ -11,28 +11,40 @@ A plugin hook provides an API for a specific use case. A plugin can implement mu
 
 Reference plugins fetch data from an external source and store it in a static data object. For example, they can discover inventory targets from AWS or PuppetDB.
 
-To use a reference, add an object with a `_plugin` key where you want to use the resolved value. The `_plugin` value must be the name of the plugin to use, and the object must contain any required plugin-specific options.
+To use a reference, add an object with a `_plugin` key where you want to use the
+resolved value. The `_plugin` value must be the name of the plugin you're using,
+and the object must contain any required plugin-specific options.
 
-Bolt currently supports references in an inventory file to define targets, groups, and any data like facts or config. It resolves references only as needed, which means that targets and groups references are resolved when the inventory is loaded, while data (vars, facts, features, config) references are resolved when a target that uses that data is loaded in a plan.
+Bolt currently supports references in an inventory file to define targets,
+groups, and any data like `facts` or `config`. It resolves references only as
+needed, which means that `targets` and `groups` references are resolved when the
+inventory is loaded, while data, such as `vars`, `facts`, `features`, and `config`
+references, are resolved when a target that uses that data is loaded in a plan.
 
 
 ### AWS
 
 The `aws_inventory` plugin generates targets from AWS EC2 instances. 
 
-It is a module-based plugin available on the Puppet Forge and is installed with Bolt. [View the documentation](https://forge.puppet.com/puppetlabs/aws_inventory).
+It is a module-based plugin available on the Puppet Forge and is installed with
+Bolt. [View the documentation on the Forge](https://forge.puppet.com/puppetlabs/aws_inventory).
 
 
 ### Azure
 
 The `azure_inventory` plugin generates targets from Azure VMs and VM scale sets. 
 
-It is a module-based plugin available on the PUppet Forge and is installed with Bolt. [View the documentation](https://forge.puppet.com/puppetlabs/azure_inventory).
+It is a module-based plugin available on the Puppet Forge and is installed with
+Bolt. [View the documentation on the forge](https://forge.puppet.com/puppetlabs/azure_inventory).
 
 
 ### Prompt
 
-The `prompt` plugin allows users to interactively enter sensitive configuration information on the CLI instead of storing that data in the inventoryfile. Data will only be looked up when the value is needed for the target and once the value has been stored it will be re-used for the rest of the Bolt run. The `prompt` plugin may only be used when nested under the `config` field.
+The `prompt` plugin allows users to interactively enter sensitive configuration
+information on the CLI instead of storing that data in the inventory file. Data
+is looked up when the value is needed for the target. Once the value has been
+stored, it is re-used for the rest of the Bolt run. The `prompt` plugin must 
+be nested under the `config` field.
 
 #### Available fields
 
@@ -40,12 +52,12 @@ The following fields are available to the `prompt` plugin.
 
 | Key | Description | Type | Default |
 | --- | ----------- | ---- | ------- |
-| **`_plugin`** | The name of the plugin.<br> **Required** and must be set to `prompt` | `String` | None |
+| **`_plugin`** | The name of the plugin.<br> **Required.** Must be set to `prompt`. | `String` | None |
 | **`message`** | The text to show when prompting the user.<br> **Required.** | `String` | None |
 
 #### Example usage
 
-Prompting for a password in an inventory file.
+Prompting for a password in an inventory file:
 
 ```yaml
 version: 2
@@ -63,7 +75,7 @@ config:
 
 The `puppetdb` plugin queries PuppetDB for a group of targets. 
 
-If target-specific configuration is required the `puppetdb` plugin can be used to lookup configuration values for the `name`, `uri`, and `config` inventory options for each target. These values can be set in the `target_mapping` field. The fact lookup values can be either `certname` to reference the `[certname]` of the target or a [PQL dot notation](https://puppet.com/docs/puppetdb/latest/api/query/v4/ast.html#dot-notation) facts string such as `facts.os.family` to reference fact value. Dot notation is required for both structured and unstructured facts.
+If target-specific configuration is required, the `puppetdb` plugin can be used to lookup configuration values for the `name`, `uri`, and `config` inventory options for each target. These values can be set in the `target_mapping` field. The fact lookup values can be either `certname` to reference the `[certname]` of the target, or a [PQL dot notation](https://puppet.com/docs/puppetdb/latest/api/query/v4/ast.html#dot-notation) facts string such as `facts.os.family` to reference fact value. Dot notation is required for both structured and unstructured facts.
 
 #### Available fields
 
@@ -73,13 +85,13 @@ The following fields are available to the `puppetdb` plugin.
 
 | Key | Description | Type | Default |
 | --- | ----------- | ---- | ------- |
-| **`_plugin`** | The name of the plugin.<br> **Required** and must be set to `puppetdb` | `String` | None |
+| **`_plugin`** | The name of the plugin.<br> **Required.** Must be set to `puppetdb`. | `String` | None |
 | **`query`** | A string containing a [PQL query](https://puppet.com/docs/puppetdb/latest/api/query/v4/pql.html) or an array containing a [PuppetDB AST format query](https://puppet.com/docs/puppetdb/latest/api/query/v4/ast.html).<br> **Required.** | `String` | None |
 | `target_mapping` | A hash of target attributes (`name`, `uri`, `config`) to populate with fact lookup values. | `Hash` | None |
 
 #### Example usage
 
-Lookup targets with the fact `osfamily: RedHat` and set the hostname with the fact `networking.interfaces.en0.ipaddress`.
+Lookup targets with the fact `osfamily: RedHat`, and set the hostname with the fact `networking.interfaces.en0.ipaddress`:
 
 ```yaml
 version: 2
@@ -98,7 +110,12 @@ targets:
 
 The `task` plugin lets a Bolt plugin hook run a task. How this task is run depends on the hook called. In most cases the task will run on the localhost target without access to any configuration defined in an inventory file, but with access to any parameters that are configured. The plugin extracts the `value` key and uses that as the value.
 
-To use the `task` plugin to load targets the task value must return an array of target objects in the format that the inventory file accepts. When referring to another value, the type of value should match whatever the reference expects. For example, `host-key-check` for SSH must be a boolean, `password` must be a string, and `run-as-command` must be an array of strings. The following result would be appropriate for an entire ssh section of configuration.
+To use the `task` plugin to load targets, the task value must return an array of
+target objects in the format that the inventory file accepts. When referring to
+another value, the type of value should match whatever the reference expects.
+For example, `host-key-check` for SSH must be a boolean, `password` must be a
+string, and `run-as-command` must be an array of strings. The following result
+would be appropriate for the entire SSH section of a configuration.
 
 ```json
 {
@@ -112,7 +129,7 @@ To use the `task` plugin to load targets the task value must return an array of 
 
 #### Available fields
 
-The following fields are available to the `task` plugin.
+The following fields are available to the `task` plugin:
 
 | Key | Description | Type | Default |
 | --- | ----------- | ---- | ------- |
@@ -122,7 +139,7 @@ The following fields are available to the `task` plugin.
 
 #### Example usage
 
-Loading targets with a `my_json_file::targets` task and a password with a `my_db::secret_lookup` task.
+Loading targets with a `my_json_file::targets` task and a password with a `my_db::secret_lookup` task:
 
 ```yaml
 version: 2
@@ -142,7 +159,7 @@ config:
         key: ssh_password
 ```
 
-A python task to load a secret from a database.
+A python task to load a secret from a database:
 
 ```python
 #!/usr/bin/env python
@@ -162,21 +179,24 @@ json.dump({'value': secret}, sys.stdout)
 
 The `terraform` plugin generates targets from local and remote Terraform state files. 
 
-It is a module-based plugin available on the Puppet Forge and is installed with Bolt. [View the documentation](https://forge.puppet.com/puppetlabs/terraform).
+It is a module-based plugin available on the Puppet Forge and is installed with
+Bolt. [View the documentation on the Forge](https://forge.puppet.com/puppetlabs/terraform).
 
 
 ### Vault
 
 The `vault` plugin allows values to be set by accessing secrets from a Key/Value engine on a Hashicorp Vault server. 
 
-It is a module-based plugin available on the Puppet Forge and is installed with Bolt. [View the documentation](https://forge.puppet.com/puppetlabs/vault).
+It is a module-based plugin available on the Puppet Forge and is installed with
+Bolt. [View the documentation on the Forge](https://forge.puppet.com/puppetlabs/vault).
 
 
 ### YAML
 
 The `yaml` plugin composes multiple YAML files into a single file. This can be used to combine multiple inventory files or to separate sensitive data from the Bolt project directory.
 
-It is a module-based plugin available on the Puppet Forge and is installed with Bolt. [View the documentation](https://forge.puppet.com/puppetlabs/yaml)
+It is a module-based plugin available on the Puppet Forge and is installed with
+Bolt. [View the documentation on the Forge](https://forge.puppet.com/puppetlabs/yaml)
 
 
 ## Secret plugins
@@ -194,14 +214,14 @@ Once keys are generated, values can be encrypted with the command `bolt secret e
 
 #### Available fields
 
-The following fields are available to the `pkcs7` plugin in an inventory file.
+The following fields are available to the `pkcs7` plugin in an inventory file:
 
 | Key | Description | Type | Default |
 | --- | ----------- | ---- | ------- |
 | **`_plugin`** | The name of the plugin.<br> **Required** and must be set to `pkcs7` | `String` | None |
 | **`encrypted_value`** | The encrypted value.<br> **Required.** | `String` | None |
 
-The following fields are avaiable to the pkcs7 plugin in a configuration file.
+The following fields are available to the pkcs7 plugin in a configuration file:
 
 | Key | Description | Type | Default |
 | --- | ----------- | ---- | ------- |
@@ -211,7 +231,7 @@ The following fields are avaiable to the pkcs7 plugin in a configuration file.
 
 #### Example usage
 
-Encrypt a password in an inventory file.
+Encrypt a password in an inventory file:
 
 ```yaml
 version: 2
@@ -225,7 +245,7 @@ targets:
             MY ENCRYPTED DATA
 ```
 
-Configure the pkcs7 plugin in a configuration file.
+Configure the pkcs7 plugin in a configuration file:
 
 ```yaml
 plugins:
