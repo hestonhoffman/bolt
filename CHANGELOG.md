@@ -1,5 +1,14 @@
 # Changelog
 
+## Bolt Next
+
+### New features
+
+* **Support for multiple configuration files** ([#608](https://github.com/puppetlabs/bolt/issues/608))
+
+  Bolt now supports system-wide and user configuration files, in addition to the existing project configuration file.
+  File precedence and merge strategy can be found in the [Bolt configuration docs](https://puppet.com/docs/bolt/latest/configuring_bolt.html).
+
 ## Bolt 1.46.0
 
 ### Deprecations and removals
