@@ -1,24 +1,41 @@
 # Configuring Bolt
 
-The `bolt.yaml` file is Bolt's configuration file. It configures all of Bolt's options and features, including global options, transports, plugins, PuppetDB connection, and log files.
+You can configure Bolt's options and features at a project level, a user level, or a system-wide level. 
 
-For a complete list of Bolt's settings, see the [configuration reference](bolt_configuration_reference.md).
+The options and features you can configure include:
+- global options
+- transports 
+- plugins
+- PuppetDB connections
+- log files 
+
+For a complete list of Bolt settings, see the [configuration reference](bolt_configuration_reference.md).
 
 ## Configuration files
 
-Bolt has three configuration files. If a configuration file is not located at the expected path, or is empty, it will not be loaded. Bolt's configuration files are located at the following paths, from highest precedence to lowest:
+To configure Bolt, create a Bolt configuration file named `bolt.yaml` in one of the locations listed below. If a configuration file is not located at the expected path, or the file is empty, Bolt does not load the file. 
+
+You can place `bolt.yaml` configuration files at the following paths, from highest precedence to lowest:
 
 - **Project**
+  
+  The `bolt.yaml` file in a project directory applies settings to that project specifically. Matching settings at the project level override those at the user and system-wide levels.
 
-  `<boltdir>/bolt.yaml`
+  `boltdir/bolt.yaml` or `<MY_PROJECT_NAME>/bolt.yaml`
 
   > **Note:** The project configuration file is loaded from the [Bolt project directory](bolt_project_directories.md). The default project directory is `~/.puppetlabs/bolt/`.
 
 - **User**
+  
+  The `bolt.yaml` file at the user level applies settings only to that user. Matching settings at the user level are overridden by project-level settings, but take precedent over system-wide settings.  
 
   `~/.puppetlabs/etc/bolt/bolt.yaml`
 
 - **System-wide**
+
+  Settings in a system-wide config file apply to all users running Bolt, regardless of the Bolt project directory. However, matching settings at the project or user level override system-wide settings.
+  
+  The `bolt.yaml` file at the system-wide level applies settings only to that user.
 
   \*nix: `/etc/puppetlabs/bolt/bolt.yaml`
 
@@ -26,29 +43,29 @@ Bolt has three configuration files. If a configuration file is not located at th
 
 ## Configuration precedence
 
-Bolt uses the following precedence, from highest precedence (cannot be overriden) to lowest, when merging configuration options:
+Bolt uses the following precedence when interpolating configuration settings, from highest precedence to lowest:
 
-  - Target URI (i.e. ssh://user:password@hostname:port) --- highest precedence
+  - Target URI (i.e. ssh://user:password@hostname:port)
   - [Inventory file](inventory_file.md) options
   - [Command line flags](bolt_command_reference.md)
   - Project configuration file
   - User configuration file
   - System-wide configuration file
-  - SSH configuration file options (e.g. `~/.ssh/config`) --- lowest precedence
+  - SSH configuration file options (e.g. `~/.ssh/config`)
 
 ## Merge strategy
 
-When merging configuration, Bolt's strategy is to shallow merge any options that accept hashes and to overwrite any options that do not accept hashes. There are two exceptions to this strategy:
+When merging configurations, Bolt's strategy is to shallow merge any options that accept hashes and to overwrite any options that do not accept hashes. There are two exceptions to this strategy:
 
 - [Transport configuration](bolt_configuration_reference.md#transport-configuration-options) (e.g. `ssh`, `winrm`) is deep-merged.
 
 - [Plugin configuration](using_plugins.md#configuring-plugins) is shallow-merged for _each individual plugin_.
 
-### Transport configuration
+### Transport configuration merge strategy
 
-Transport configuration is deep merged.
+Transport configuration is deep merged. 
 
-Setting configuration in a project configuration file:
+For example, given this SSH configuration in a project configuration file:
 
 ```yaml
 ssh:
@@ -57,7 +74,7 @@ ssh:
   host-key-check: false
 ```
 
-Setting configuration in a user configuration file:
+And this this SSH configuration in a user configuration file:
 
 ```yaml
 ssh:
@@ -65,8 +82,7 @@ ssh:
   password: puppet
   private-key: ~/path/to/key/id_rsa
 ```
-
-Merged configuration:
+The merged Bolt configuration would look like this:
 
 ```yaml
 ssh:
@@ -77,13 +93,13 @@ ssh:
   ...
 ```
 
-### Plugin configuration
+### Plugin configuration merge strategy
 
-The `plugins` option accepts a hash where each key is the name of a plugin and its value is a hash of configuration options for the plugin. When merging configuration, the configuration for individual plugins is shallow merged.
+The `plugins` option accepts a hash where each key is the name of a plugin and its value is a hash of configuration options for the plugin. When merging configurations, the configuration for individual plugins is shallow merged.
 
 > **Note:** If a plugin is configured in one file, but is not configured in a file with a higher precedence, the configuration for the plugin will still be present in the merged configuration.
 
-Setting configuration in a project configuration file:
+For example, given this plugin configuration in a project configuration file:
 
 ```yaml
 plugins:
@@ -94,7 +110,7 @@ plugins:
       pass: bolt
 ```
 
-Setting configuration in a system-wide configuration file:
+And this plugin configuration in a system-wide configuration file:
 
 ```yaml
 plugins:
@@ -107,7 +123,7 @@ plugins:
       token: xxxx-xxxx-xxxx-xxxx
 ```
 
-Merged configuration:
+The merged Bolt configuration would look like this:
 
 ```yaml
 plugins:
@@ -138,4 +154,3 @@ plugins:
 - **[Connecting Bolt to PuppetDB](bolt_connect_puppetdb.md)**  
 
   Configure Bolt to connect to PuppetDB.
-
