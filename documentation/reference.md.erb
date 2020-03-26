@@ -1,13 +1,15 @@
-# Bolt functions
+# Bolt functions and types
+
+## Functions
 
 <% for func in @functions %>
-## `<%= func['name'] %>`
+### `<%= func['name'] %>`
 
 <%= func['text'] %>
 
 <% for sig in func['signatures'] %>
 <% if sig['text'] != func['text'] -%>
-### <%= sig['text'] %>
+#### <%= sig['text'] %>
 
 <% end -%>
 ```
@@ -51,3 +53,221 @@
 <% end -%>
 <% end %>
 <% end %>
+
+## Types
+
+### `ApplyResult`
+
+An `ApplyResult` is returned from an [apply action](https://puppet.com/docs/bolt/latest/applying_manifest_blocks.html#)
+as part of a `ResultSet` object and contains information about the apply action.
+
+The following functions are available to `ApplyResult` objects. They are accessed with
+dot notation `$apply_result.function`.
+
+- `action`
+
+  Returns a `String` representation of the result type (`apply`).
+
+- `error`
+
+  Returns an `Error` object constructed from the `_error` in the value.
+
+- `message`
+
+  Returns the `_output` key from the value.
+
+- `ok`
+
+  Returns a `Boolean` indicating whether the `ApplyResult` was successful.
+
+- `report`
+
+  Returns a `Hash` containing the Puppet report from the application.
+
+- `target`
+
+  Returns the `Target` object that the `ApplyResult` is from.
+
+- `to_data`
+
+  Returns a `Hash` representation of `ApplyResult`.
+
+### `Result`
+
+A `Result` is returned from an action executed on a `Target` as part of a `ResultSet`
+object and contains information about the execution.
+
+The following functions are available to `Result` objects. They are accessed with
+dot notation `$result.function`.
+
+- `[]`
+
+  Accesses the value hash directly and returns the value for the key.
+
+  > **Note:** This function does not use dot notation and is called directly on the
+    `Result`, i.e. `$result[key]`
+
+- `action`
+
+  Returns a `String` representation of the result type (`task`, `command`, etc.)
+
+- `error`
+
+  Returns an `Error` object contructed from the `_error` in the value.
+
+- `message`
+
+  Returns the `_output` key from the value.
+
+- `ok`
+
+  Returns `Boolean` indicating whether the `Result` was successful.
+
+- `status`
+
+  Returns `success` if the `Result` was successful and `failure` otherwise.
+
+- `target`
+
+  Returns the `Target` object that the `Result` is from.
+
+- `value`
+
+  Returns a `Hash` containing the value of the `Result`.
+
+### `ResultSet`
+
+A `ResultSet` is returned from an execution function and contains one or more `Result`
+objects. An [apply action](https://puppet.com/docs/bolt/latest/applying_manifest_blocks.html#)
+returns a `ResultSet` with one or more `ApplyResult` objects.
+
+The following functions are available to `ResultSet` objects. They are accessed with
+dot notation `$result_set.function`.
+
+- `[]`
+
+  Access a range of results or the _i_ th result in the set.
+
+  > **Note:** This function does not use dot notation and is called directly on the
+    `Result`, e.g. `$result_set[0]`, `$result_set[0, 2]`
+
+- `count`
+
+  Returns an `Integer` count of the number of results in the set.
+
+- `empty`
+
+  Returns a `Boolean` indicated whether the set is empty.
+
+- `error_set`
+
+  Returns a `ResultSet` that contains only the results that failed.
+
+- `filter_set(block)`
+
+  Filters the set with the given block and returns a new `ResultSet` object.
+
+- `find(String $target_name)`
+
+  Returns the `Result` for the specified `Target`.
+
+- `first`
+
+  Returns the first `Result` in the set. Useful for unwrapping single results.
+
+- `names`
+
+  Returns an `Array` of `String` names of all targets in the set.
+
+- `ok`
+
+  Returns a `Boolean` indicating whether all results were successful. Equivalent
+  to `$result_set.error_set.empty`.
+
+- `ok_set`
+
+  Returns a `ResultSet` that contains only the results that were successful.
+
+- `results`
+
+  Returns an array of `Result` or `ApplyResult` objects.
+
+- `targets`
+
+  Returns an `Array` of `Target` objects from all results in the set.
+
+- `to_data`
+
+  Returns an `Array` of `Hash` representations of each result.
+
+### `Target`
+
+The `Target` object represents a target and its specific connection options.
+
+The following functions are available to `ResultSet` objects. They are accessed with
+dot notation `$result_set.function`.
+
+- `config`
+
+  Returns a `Hash` of target-specific configuration.
+
+  > **Note:** This function does not return default configuration values or
+    configuration set in a `bolt.yaml` file.
+
+- `facts`
+
+  Returns a `Hash` for the target's facts.
+
+  > **Note::** This function does not lookup facts for a target and only returns
+    the facts specified in an `inventory.yaml` file or set on a target during a
+    plan run.
+
+- `features`
+
+  Returns an `Array` of `Strings` listing the target's features.
+
+- `host`
+
+  Returns a `String` for the target's host.
+
+- `name`
+
+  Returns a `String` for the target's human-readable name.
+
+- `password`
+
+  Returns a `String` for the target's password.
+
+- `plugin_hooks`
+
+  Returns a `Hash` for the target's 
+  [`plugin_hooks` configuration options](https://puppet.com/docs/bolt/latest/bolt_configuration_reference.html#plugin-hooks-configuration-options)
+
+- `port`
+
+  Returns an `Integer` for the target's port.
+
+- `protocol`
+
+  Returns a `String` for the protocol used to connect to the target.
+
+- `safe_name`
+
+  Returns a `String` for the target's safe name. The safe name is the target's `name`
+  if one is given, or its `uri` with any `password` omitted.
+
+- `target_alias`
+
+  Returns an `Array` of `String` aliases for the target.
+
+- `uri`
+
+  Returns a `String` for the target's URI.
+
+- `user`
+
+  Returns a `String` for the target's user.
+
+- `vars`
+
+  Returns a `Hash` for the target's vars.
