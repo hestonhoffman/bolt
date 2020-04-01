@@ -1,327 +1,149 @@
 # Bolt data types
 
+This page lists the Bolt data types and describes how to use them.
+
 ## `ApplyResult`
 
-An `ApplyResult` is returned from an [apply action](applying_manifest_blocks.html#)
-as part of a `ResultSet` object and contains information about the apply action.
+An [apply action](applying_manifest_blocks.md#return-value-of-apply-action)
+returns an `ApplyResult`. An `ApplyResult` is part of a `ResultSet` object and
+contains information about the apply action. You can access `ApplyResult`
+functions with dot notation, using the syntax: `$apply_result.function`.
 
-The following functions are available to `ApplyResult` objects. They are accessed with
-dot notation `$apply_result.function`.
+For example, the following plan uses an apply action to install Docker as root,
+and logs a message with any errors that occurred during execution using the
+`error` function:
 
-### `action`
+```puppet
+plan testing::test(
+  TargetSpec $targets,
+) {
+  $results = apply($targets, _catch_errors => true, _noop => true, _run_as => root) {
+   include 'docker'
+}
+  $results.each |$result| {
+    notice($result.error)}
+}
+```
 
-**Returns**
+The following functions are available to `ApplyResult` objects. 
 
-`String`: The type of result (`apply`)
-
-### `error`
-
-**Returns**
-
-`Error`: An object constructed from the `_error` field of the result's value.
-
-### `message`
-
-**Returns**
-
-`String`: The `_output` field of the result's value.
-
-### `ok`
-
-**Returns**
-
-`Boolean`: Whether the result was successful.
-
-### `report`
-
-**Returns**
-
-`Hash`: The Puppet report from the apply action.
-
-### `target`
-
-**Returns**
-
-`Target`: The target the result is from.
-
-### `to_data`
-
-**Returns**
-
-`Hash`: A serialized representation of `ApplyResult`.
-
+| Function | Type returned | Description |
+|---|---|---|
+| `action` | `String` | The action performed. `$apply_result.action` always returns the string `apply`. |
+| `error` | `Error` | An object constructed from the `_error` field of the result's value. |
+| `message` | `String` | The `_output` field of the result's value. |
+| `ok` | `Boolean` | Whether the result was successful. |
+| `report` | `Hash` | The Puppet report from the apply action. |
+| `target` | `Target` | The target the result is from. |
+| `to_data` | `Hash` | A serialized representation of `ApplyResult`. |
 
 ## `Result`
 
-A `Result` is returned from an action executed on a single target and contains
-information about the execution. `Result`s are aggregated to make a `ResultSet`
-object.
+For each target that you execute an action on, Bolt returns a `Result` object and adds the `Result` to a `ResultSet` object. A `Result` object contains information about the action you executed on the target.
 
-The following functions are available to `Result` objects. They are accessed with
-dot notation `$result.function`.
+You can access `Result` functions with dot notation, using the syntax: `$result.function`.
 
-### `[]`
+For example, the following plan runs a `whoami` command and logs the targets that the command was executed on using the `target` function.
 
-Accesses the value hash directly and returns the value for the key.
+```puppet
+plan testing::whoami(
+  TargetSpec $targets,
+) {
+  $results = run_command('whoami', $targets, '_catch_errors' => true)
 
-> **Note:** This function does not use dot notation and is called directly on the
-  `Result`, i.e. `$result[key]`
+  $results.each |$result| {
+    notice($result.target)
+  }
+}
+```
 
-**Returns**
+The following functions are available to `Result` objects.
 
-`Data`: The accessed value.
-
-### `action`
-
-**Returns**
-
-`String`: The type of result (`task`, `command`, etc.)
-
-### `error`
-
-**Returns**
-
-`Error`: An object constructed from the `_error` field of the result's value.
-
-### `message`
-
-**Returns**
-
-`String`: The `_output` field of the result's value.
-
-### `ok`
-
-**Returns**
-
-`Boolean`: Whether the result was successful.
-
-### `status`
-
-**Returns**
-
-`String`: Either `success` if the result was successful or `failure`.
-
-### `target`
-
-**Returns**
-
-`Target`: The target the result is from.
-
-### `value`
-
-**Returns**
-
-`Hash`: The output or return of executing on the target.
-
+| Function | Type returned | Description |
+|---|---|---|
+| `[]` | `Data` | Accesses the value hash directly and returns the value for the key. This function does not use dot notation. Call the function directly on the `Result`. For example, `$result[key]`. |
+| `action` | `String` | The type of result. For example, `task` or `command`. |
+| `error` | `Error` | An object constructed from the `_error` field of the result's value. |
+| `message` | `String` | The `_output` field of the result's value. |
+| `ok` | `Boolean` | Whether the result was successful. |
+| `status` | `String` | Either `success` if the result was successful or `failure`. |
+| `target` | `Target` | The target the result is from. |
+| `value` | `Hash` | The output or return of executing on the target. |
 
 ## `ResultSet`
 
-A `ResultSet` is returned from an execution function and contains one or more `Result`
-objects. An [apply action](applying_manifest_blocks.html#) returns a `ResultSet` with one 
-or more `ApplyResult` objects.
+For each target that you execute an action on, Bolt returns a `Result` object
+and adds the `Result` to a `ResultSet` object. In the case of 
+[apply actions](applying_manifest_blocks.html#), Bolt returns a `ResultSet` 
+with one or more `ApplyResult` objects.
 
-The following functions are available to `ResultSet` objects. They are accessed with
-dot notation `$result_set.function`.
+You can access `ResultSet` functions with dot notation, using the syntax:
+`$result_set.function`.
 
-### `[]`
+For example, the following plan runs a `whoami` command and logs a message
+with all results in the `ResultSet` using the `results` function.
 
-Access a range of results or the _i_ th result in the set.
+```puppet
+plan testing::whoami(
+  TargetSpec $targets,
+) {
+  $results = run_command('whoami', $targets, '_catch_errors' => true)
+  
+  notice($results.results)
+}
+```
 
-> **Note:** This function does not use dot notation and is called directly on the
-  `Result`, e.g. `$result_set[0]`, `$result_set[0, 2]`
+The following functions are available to `ResultSet` objects:
 
-**Returns**
-
-`Variant[Result, ApplyResult, Array[Variant[Result, ApplyResult]]]`: The accessed results.
-
-### `count`
-
-**Returns**
-
-`Integer`: The number of results in the set.
-
-### `empty`
-
-**Returns**
-
-`Boolean`: Whether the set is empty.
-
-### `error_set`
-
-**Returns**
-
-`ResultSet`: The set of failing results.
-
-### `filter_set(block)`
-
-**Parameters**
-
-- `block`
-
-  The block to filter the set by.
-
-**Returns**
-
-`ResultSet`: The set of filtered results.
-
-### `find(String $target_name)`
-
-**Parameters**
-
-- `String` target_name
-
-  The string name of the target to retrive a result for.
-
-**Returns**
-
-`Variant[Result, ApplyResult]`: The target's result.
-
-### `first`
-
-**Returns**
-
-`Variant[Result, ApplyResult]`: The first result in the set. Useful for unwrapping single results.
-
-### `names`
-
-**Returns**
-
-`Array[String]`: The names of all targets that have results in the set.
-
-### `ok`
-
-**Returns**
-
-`Boolean`: Whether all results were successful. Equivalent to `$result_set.error_set.empty`.
-
-### `ok_set`
-
-**Returns**
-
-`ResultSet`: The set of successful results.
-
-### `results`
-
-**Returns**
-
-`Array[Variant[Result, ApplyResult]]`: All results in the set.
-
-### `targets`
-
-**Returns**
-
-`Array[Target]`: The list of targets that have results in the set.
-
-### `to_data`
-
-**Returns**
-
-`Array[Hash`: An array of serialized representations of each result in the set.
-
+| Function | Parameters (if applicable) | Type returned | Description |
+|---|---|---|---|
+| `[]` || `Variant[Result, ApplyResult, Array[Variant[Result, ApplyResult]]]` | The accessed results. This function does not use dot notation. Call the function directly on the `Result`. For example, `$result_set[0]`, `$result_set[0, 2]`. |
+| `count` || `Integer` | The number of results in the set. |
+| `empty` || `Boolean` | Whether the set is empty. |
+| `error_set` || `ResultSet` | The set of failing results. |
+| `filter_set(block)` | `block` | `ResultSet` | Filters a set of results by `block`. |
+| `find(String $target_name)` | `String $target_name` | `Variant[Result, ApplyResult]` | Retrieves a result for a specific target. |
+| `first` || `Variant[Result, ApplyResult]` | The first result in the set. Useful for unwrapping single results. |
+| `names` || `Array[String]` | The names of all targets that have results in the set. |
+| `ok` || `Boolean` | Whether all results were successful. Equivalent to `$result_set.error_set.empty`. |
+| `results` || `Array[Variant[Result, ApplyResult]]` | All results in the set. |
+| `targets` || `Array[Target]` | The list of targets that have results in the set. |
+| `to_data` || `Array[Hash` | An array of serialized representations of each result in the set. |
 
 ## `Target`
 
 The `Target` object represents a target and its specific connection options.
 
-The following functions are available to `ResultSet` objects. They are accessed with
-dot notation `$result_set.function`.
+You can access `Target` functions using dot notation, using the syntax: `$target.function`.
 
-### `config`
+For example, the following plan logs a message with each target's URI using the
+`uri` function.
 
-**Returns**
+```puppet
+plan testing::uri_check(
+  TargetSpec $targets,
+) {
+  get_targets($targets).each | $target | {
+    notice($target.uri)    
+  } 
+}
+```
 
-`Hash[String, Data]`: The inventory configuration for the target.
+The following functions are available to `Target` objects:
 
-> **Note:** This function does not return default configuration values or
-  configuration set in a `bolt.yaml` file. It only returns the configuration set
-  in an `inventory.yaml` file or the configuration set during a plan using the 
-  `Target.new` or `set_config()` functions.
-
-### `facts`
-
-**Returns**
-
-`Hash[String, Data]`: The target's facts.
-
-> **Note::** This function does not lookup facts for a target and only returns
-  the facts specified in an `inventory.yaml` file or set on a target during a
-  plan run.
-
-### `features`
-
-**Returns**
-
-`Array[String]`: The target's features.
-
-### `host`
-
-**Returns**
-
-`String`: The target's hostname.
-
-### `name`
-
-**Returns**
-
-`String`: The target's human-readable name, or its URI if a name was not given.
-
-### `password`
-
-**Returns**
-
-`String`: The password to use when connecting to the target.
-
-### `plugin_hooks`
-
-**Returns**
-
-`Hash[String, Data]`: The target's 
-[`plugin_hooks` configuration options](https://puppet.com/docs/bolt/latest/bolt_configuration_reference.html#plugin-hooks-configuration-options)
-
-### `port`
-
-**Returns**
-
-`Integer`: The target's connection port.
-
-### `protocol`
-
-**Returns**
-
-`String`: The protocol used to connect to the target.
-
-> **Note:** This is equivalent to the target's `transport`, except for targets
-  using the `remote` transport. For example, a target with the URI 
-  `http://example.com` using the `remote` transport would return `http` for
-  the `protocol`.
-
-### `safe_name`
-
-**Returns**
-
-`String`: The target's safe name. Equivalent to `name` if a name was given, or
-the target's `uri` with any password omitted.
-
-### `target_alias`
-
-**Returns**
-
-`Variant[String, Array[String]]`: The target's aliases.
-
-### `uri`
-
-**Returns**
-
-`String`: The target's URI.
-
-### `user`
-
-**Returns**
-
-`String`: The user to connect to the target.
-
-### `vars`
-
-**Returns**
-
-`Hash[String, Data]`: The target's variables.
+| Function | Type returned | Description | Note |
+|---|---|---|---|
+| `config` | `Hash[String, Data]` | The inventory configuration for the target. | This function does not return default configuration values or configuration set in a `bolt.yaml` file. It only returns the configuration set in an `inventory.yaml` file or the configuration set during a plan using the `Target.new` or `set_config()` functions. |
+| `facts` | `Hash[String, Data]` | The target's facts. | This function does not lookup facts for a target and only returns the facts specified in an `inventory.yaml` file or set on a target during a plan run. |
+| `features` | `Array[String]` | The target's features. ||
+| `host` | `String` | The target's hostname. ||
+| `name` | `String` | The target's human-readable name, or its URI if a name was not given. ||
+| `password` | `String` | The password to use when connecting to the target. ||
+| `plugin_hooks` | `Hash[String, Data]` | The target's `plugin_hooks` [configuration options](https://puppet.com/docs/bolt/latest/bolt_configuration_reference.html#plugin-hooks-configuration-options). ||
+| `port` | `Integer` | The target's connection port. ||
+| `protocol` | `String` | The protocol used to connect to the target. | This is equivalent to the target's `transport`, except for targets using the `remote` transport. For example, a target with the URI `http://example.com` using the `remote` transport would return `http` for the `protocol`. |
+| `safe_name` | `String` | The target's safe name. Equivalent to `name` if a name was given, or the target's `uri` with any password omitted. ||
+| `target_alias` | `Variant[String, Array[String]]` | The target's aliases. ||
+| `uri` | `String` | The target's URI. ||
+| `user` | `String` | The user to connect to the target. ||
+| `vars` | `Hash[String, Data]` | The target's variables. ||
