@@ -74,7 +74,7 @@ The following functions are available to `Result` objects.
 
 For each target that you execute an action on, Bolt returns a `Result` object
 and adds the `Result` to a `ResultSet` object. In the case of 
-[apply actions](applying_manifest_blocks.html#), Bolt returns a `ResultSet` 
+[apply actions](applying_manifest_blocks.md), Bolt returns a `ResultSet` 
 with one or more `ApplyResult` objects.
 
 You can access `ResultSet` functions with dot notation, using the syntax:
@@ -139,7 +139,7 @@ The following functions are available to `Target` objects:
 | `host` | `String` | The target's hostname. ||
 | `name` | `String` | The target's human-readable name, or its URI if a name was not given. ||
 | `password` | `String` | The password to use when connecting to the target. ||
-| `plugin_hooks` | `Hash[String, Data]` | The target's `plugin_hooks` [configuration options](https://puppet.com/docs/bolt/latest/bolt_configuration_reference.html#plugin-hooks-configuration-options). ||
+| `plugin_hooks` | `Hash[String, Data]` | The target's `plugin_hooks` [configuration options](bolt_configuration_reference.md#plugin-hooks-configuration-options). ||
 | `port` | `Integer` | The target's connection port. ||
 | `protocol` | `String` | The protocol used to connect to the target. | This is equivalent to the target's `transport`, except for targets using the `remote` transport. For example, a target with the URI `http://example.com` using the `remote` transport would return `http` for the `protocol`. |
 | `safe_name` | `String` | The target's safe name. Equivalent to `name` if a name was given, or the target's `uri` with any password omitted. ||
