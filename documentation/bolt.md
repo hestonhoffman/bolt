@@ -1,4 +1,4 @@
-# Welcome to Bolt
+# Welcome to Bolt [version_name]
 
 Bolt is an open source orchestration tool that automates the manual work it
 takes to maintain your infrastructure. Use Bolt to automate tasks that you

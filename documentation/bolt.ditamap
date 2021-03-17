@@ -7,8 +7,15 @@
             <vrmlist>
                 <vrm version="latest"/>
             </vrmlist>
-        </prodinfo>
+        </prodinfo>     
     </topicmeta>
+    
+    <topicref keys="version_name" processing-role="resource-only">
+        <topicmeta>
+            <linktext>3.3.0</linktext>
+        </topicmeta>
+    </topicref>
+    
     <topicref href="bolt.md" format="markdown" linking="targetonly">
         <topicref href="developer_updates.md" format="markdown"/>
         <topicref navtitle="Changelog" href="https://github.com/puppetlabs/bolt/blob/main/CHANGELOG.md" format="html" scope="external" />
